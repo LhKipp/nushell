@@ -161,7 +161,7 @@ pub fn value_to_toml_value(v: &Value) -> Result<toml::Value, ShellError> {
 }
 
 #[cfg(feature = "directories")]
-pub fn global_config_dir() -> Result<PathBuf, ShellError> {
+fn global_config_dir() -> Result<PathBuf, ShellError> {
     use directories_next::ProjectDirs;
 
     let dir = ProjectDirs::from("org", "nushell", "nu")
@@ -175,7 +175,7 @@ pub fn global_config_dir() -> Result<PathBuf, ShellError> {
 }
 
 #[cfg(not(feature = "directories"))]
-pub fn global_config_dir() -> Result<PathBuf, ShellError> {
+fn global_config_dir() -> Result<PathBuf, ShellError> {
     // FIXME: unsure if this should be error or a simple default
 
     Ok(std::path::PathBuf::from("/"))
