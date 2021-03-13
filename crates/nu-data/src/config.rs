@@ -182,20 +182,20 @@ fn global_config_dir() -> Result<PathBuf, ShellError> {
 }
 
 pub fn global_config_path() -> Result<PathBuf, ShellError> {
-    global_path_for("config.toml")
+    global_config_path_for("config.toml")
 }
 
 pub fn global_keybinding_config_path() -> Result<PathBuf, ShellError> {
-    global_path_for("keybindings.yml")
+    global_config_path_for("keybindings.yml")
 }
 
 ///Path to the file containing entries of trusted files.
 ///Check autoenv trust to learn more
 pub fn global_trusted_file_path() -> Result<PathBuf, ShellError> {
-    global_path_for("nu-env.toml")
+    global_config_path_for("nu-env.toml")
 }
 
-fn global_path_for(file_name: &str) -> Result<PathBuf, ShellError> {
+fn global_config_path_for(file_name: &str) -> Result<PathBuf, ShellError> {
     let mut dir = global_config_dir()?;
     dir.push(file_name);
     Ok(dir)

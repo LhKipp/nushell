@@ -6,6 +6,8 @@ use std::{io::Read, path::PathBuf};
 use indexmap::IndexMap;
 use nu_errors::ShellError;
 
+use super::global_trusted_file_path;
+
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Trusted {
     pub files: IndexMap<String, Vec<u8>>,
@@ -28,7 +30,7 @@ pub fn is_file_trusted(nu_env_file: &PathBuf, content: &[u8]) -> Result<bool, Sh
 }
 
 pub fn read_trusted() -> Result<Trusted, ShellError> {
-    let config_path = crate::config::global_path_for("nu-env.toml")?;
+    let config_path = global_trusted_file_path()?;
 
     let mut file = std::fs::OpenOptions::new()
         .read(true)
