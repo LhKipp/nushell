@@ -198,4 +198,31 @@ impl NuConfig {
     pub fn startup_scripts(&self) -> Result<Vec<String>, ShellError> {
         self.load_scripts_if_present("startup")
     }
+
+    pub fn history_path(&self) -> Result<Option<PathBuf>, ShellError> {
+        if let Some(history_path) = self.var("history-path") {
+            let path = history_path.as_string().map_err(|_| ShellError::untagged_runtime_error("Could not convert value for config key \"history-path\" to string.\nNushell can't write to history."))?;
+            Ok(Some(PathBuf::from(path)))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn skip_welcome_message(&self) -> Result<Option<bool>, ShellError> {
+        if let Some(skip) = self.var("skip_welcome_message") {
+            //TODO check skip is boolean or else error
+            Ok(Some(skip.is_true()))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn prompt(&self) -> Result<Option<Value>, ShellError> {
+        if let Some(prompt) = self.var("prompt") {
+            //TODO check prompt is prompt or else error
+            Ok(Some(prompt))
+        } else {
+            Ok(None)
+        }
+    }
 }

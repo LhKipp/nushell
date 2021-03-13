@@ -1,5 +1,5 @@
 use crate::line_editor::configure_ctrl_c;
-use nu_command::commands::default_context::create_default_context;
+use nu_command::{commands::default_context::create_default_context, config::ConfigValueOrDefault};
 use nu_engine::{maybe_print_errors, run_block, script::run_script_standalone, EvaluationContext};
 
 #[allow(unused_imports)]
@@ -93,31 +93,46 @@ pub async fn cli(context: EvaluationContext) -> Result<(), Box<dyn Error>> {
         startup_commands_start_time.elapsed()
     );
 
-    //Configure rustyline
+    //Configure rustyline from global config
     let mut rl = default_rustyline_editor_configuration();
-    let history_path = if let Some(cfg) = &context.configs.lock().global_config {
+    if let Some(cfg) = &context.configs.lock().global_config {
         let _ = configure_rustyline_editor(&mut rl, cfg);
         let helper = Some(nu_line_editor_helper(&context, cfg));
         rl.set_helper(helper);
-        let history_path = nu_engine::history_path(cfg);
-        let _ = rl.load_history(&history_path);
+    }
 
-        history_path
-    } else {
-        nu_engine::default_history_path()
-    };
+    macro_rules! unwrap_value_and_print_on_err {
+        ($configs:ident, $func:ident, $ctx:ident) => {{
+            match $configs.$func() {
+                Ok(value) => value,
+                Err((default_value, err)) => {
+                    $ctx.host.lock().print_err(err, &Text::from(""));
+                    default_value
+                }
+            }
+        }};
+    }
 
     //set vars from cfg if present
-    let (skip_welcome_message, prompt) = if let Some(cfg) = &context.configs.lock().global_config {
+    let (skip_welcome_message, prompt, history_path) = {
+        let configs = context.configs.lock();
         (
-            cfg.var("skip_welcome_message")
-                .map(|x| x.is_true())
-                .unwrap_or(false),
-            cfg.var("prompt"),
+            unwrap_value_and_print_on_err!(configs, skip_welcome_message_or_default, context),
+            unwrap_value_and_print_on_err!(configs, prompt_or_default, context),
+            unwrap_value_and_print_on_err!(configs, history_path_or_default, context),
         )
-    } else {
-        (false, None)
     };
+
+    if history_path.is_none() {
+        context.host.lock().print_err(
+            ShellError::untagged_runtime_error("Can't save commands to history"),
+            &Text::from(""),
+        );
+    }
+
+    if let Some(path) = &history_path {
+        let _ = rl.load_history(path);
+    }
 
     //Check whether dir we start in contains local cfg file and if so load it.
     load_local_cfg_if_present(&context).await;
@@ -151,7 +166,7 @@ pub async fn cli(context: EvaluationContext) -> Result<(), Box<dyn Error>> {
         let cwd = context.shell_manager.path();
 
         let colored_prompt = {
-            if let Some(prompt) = &prompt {
+            if prompt.is_string() {
                 let prompt_line = prompt.as_string()?;
 
                 context.scope.enter_scope();
@@ -247,18 +262,24 @@ pub async fn cli(context: EvaluationContext) -> Result<(), Box<dyn Error>> {
         match line {
             LineResult::Success(line) => {
                 rl.add_history_entry(&line);
-                let _ = rl.save_history(&history_path);
+                if let Some(path) = &history_path {
+                    let _ = rl.save_history(path);
+                }
                 maybe_print_errors(&context, Text::from(session_text.clone()));
             }
 
             LineResult::ClearHistory => {
                 rl.clear_history();
-                let _ = rl.save_history(&history_path);
+                if let Some(path) = &history_path {
+                    let _ = rl.save_history(path);
+                }
             }
 
             LineResult::Error(line, err) => {
                 rl.add_history_entry(&line);
-                let _ = rl.save_history(&history_path);
+                if let Some(path) = &history_path {
+                    let _ = rl.save_history(path);
+                }
 
                 context
                     .host
@@ -279,7 +300,9 @@ pub async fn cli(context: EvaluationContext) -> Result<(), Box<dyn Error>> {
                 }
 
                 if ctrlcbreak {
-                    let _ = rl.save_history(&history_path);
+                    if let Some(path) = &history_path {
+                        let _ = rl.save_history(path);
+                    }
                     std::process::exit(0);
                 } else {
                     context.with_host(|host| host.stdout("CTRL-C pressed (again to quit)"));
@@ -303,7 +326,9 @@ pub async fn cli(context: EvaluationContext) -> Result<(), Box<dyn Error>> {
     }
 
     // we are ok if we can not save history
-    let _ = rl.save_history(&history_path);
+    if let Some(path) = &history_path {
+        let _ = rl.save_history(path);
+    }
 
     Ok(())
 }

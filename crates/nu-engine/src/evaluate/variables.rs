@@ -1,11 +1,15 @@
-use crate::history_path::history_path;
+use crate::EvaluationContext;
 use indexmap::IndexMap;
-use nu_data::config::global_keybinding_config_path;
+use nu_data::config::{global_keybinding_config_path, ConfigValueOrDefault};
 use nu_errors::ShellError;
 use nu_protocol::{TaggedDictBuilder, UntaggedValue, Value};
 use nu_source::Tag;
 
-pub fn nu(env: &IndexMap<String, String>, tag: impl Into<Tag>) -> Result<Value, ShellError> {
+pub fn nu(
+    env: &IndexMap<String, String>,
+    tag: impl Into<Tag>,
+    ctx: &EvaluationContext,
+) -> Result<Value, ShellError> {
     let tag = tag.into();
 
     let mut nu_dict = TaggedDictBuilder::new(&tag);
@@ -56,12 +60,20 @@ pub fn nu(env: &IndexMap<String, String>, tag: impl Into<Tag>) -> Result<Value, 
         );
     }
 
-    let config: Box<dyn nu_data::config::Conf> = Box::new(nu_data::config::NuConfig::new());
-    let history = history_path(&config);
-    nu_dict.insert_value(
-        "history-path",
-        UntaggedValue::filepath(history).into_value(&tag),
-    );
+    match ctx.configs.lock().history_path_or_default() {
+        Ok(Some(path)) => {
+            nu_dict.insert_value(
+                "history-path",
+                UntaggedValue::filepath(path).into_value(&tag),
+            );
+        }
+        Ok(None) => {
+            nu_dict.insert_value("history-path", UntaggedValue::nothing().into_value(&tag));
+        }
+        Err((_, e)) => {
+            nu_dict.insert_value("history-path", UntaggedValue::Error(e).into_value(&tag));
+        }
+    };
 
     Ok(nu_dict.into_value())
 }

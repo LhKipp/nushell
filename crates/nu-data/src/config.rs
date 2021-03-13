@@ -1,9 +1,11 @@
 mod conf;
+pub mod config_defaults;
 mod config_trust;
 mod local_config;
 mod nuconfig;
 
 pub use conf::Conf;
+pub use config_defaults::ConfigValueOrDefault;
 pub use config_trust::is_file_trusted;
 pub use config_trust::read_trusted;
 pub use config_trust::Trusted;
@@ -202,7 +204,7 @@ fn global_config_path_for(file_name: &str) -> Result<PathBuf, ShellError> {
 }
 
 #[cfg(feature = "directories")]
-pub fn user_data() -> Result<PathBuf, ShellError> {
+fn user_data_dir() -> Result<PathBuf, ShellError> {
     use directories_next::ProjectDirs;
 
     let dir = ProjectDirs::from("org", "nushell", "nu")
@@ -219,7 +221,7 @@ pub fn user_data() -> Result<PathBuf, ShellError> {
 }
 
 #[cfg(not(feature = "directories"))]
-pub fn user_data() -> Result<PathBuf, ShellError> {
+fn user_data() -> Result<PathBuf, ShellError> {
     // FIXME: unsure if this should be error or a simple default
 
     Ok(std::path::PathBuf::from("/"))
