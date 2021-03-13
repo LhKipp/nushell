@@ -33,7 +33,7 @@ impl WholeStreamCommand for SubCommand {
 }
 
 pub async fn path(args: CommandArgs) -> Result<OutputStream, ShellError> {
-    let path = config::default_path()?;
+    let path = config::global_config_path()?;
 
     Ok(OutputStream::one(ReturnSuccess::value(
         UntaggedValue::Primitive(Primitive::FilePath(path)).into_value(args.call_info.name_tag),

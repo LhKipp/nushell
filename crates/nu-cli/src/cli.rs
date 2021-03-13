@@ -326,7 +326,7 @@ pub async fn load_local_cfg_if_present(context: &EvaluationContext) {
 }
 
 pub async fn load_global_cfg(context: &EvaluationContext) {
-    match config::default_path() {
+    match config::global_config_path() {
         Ok(path) => {
             if let Some(err) = context.load_config(&ConfigPath::Global(path)).await {
                 context.host.lock().print_err(err, &Text::from(""));

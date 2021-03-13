@@ -1,11 +1,11 @@
 use crate::prelude::*;
-use nu_data::config::Trusted;
+use nu_data::config::{global_trusted_file_path, Trusted};
 use nu_engine::WholeStreamCommand;
 use nu_errors::ShellError;
 use nu_protocol::SyntaxShape;
 use nu_protocol::{Primitive, ReturnSuccess, Signature, UntaggedValue, Value};
+use std::fs;
 use std::io::Read;
-use std::{fs, path::PathBuf};
 pub struct AutoenvUnTrust;
 
 #[async_trait]
@@ -45,7 +45,7 @@ impl WholeStreamCommand for AutoenvUnTrust {
             }
         };
 
-        let config_path = config::default_path_for(&Some(PathBuf::from("nu-env.toml")))?;
+        let config_path = global_trusted_file_path()?;
 
         let mut file = match std::fs::OpenOptions::new()
             .read(true)

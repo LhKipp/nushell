@@ -55,7 +55,7 @@ impl NuConfig {
         let file_path = if let Some(file_path) = cfg_file_path {
             file_path
         } else {
-            crate::config::default_path()?
+            crate::config::global_config_path()?
         };
 
         Ok(NuConfig {
@@ -71,7 +71,7 @@ impl NuConfig {
         } else {
             IndexMap::default()
         };
-        let path = if let Ok(path) = crate::config::default_path() {
+        let path = if let Ok(path) = crate::config::global_config_path() {
             path
         } else {
             PathBuf::new()

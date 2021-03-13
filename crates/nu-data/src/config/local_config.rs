@@ -96,7 +96,7 @@ fn walk_up(
 }
 
 fn is_existent_local_cfg(cfg_file_path: &PathBuf) -> Result<bool, ShellError> {
-    if !cfg_file_path.exists() || cfg_file_path.parent() == super::default_path()?.parent() {
+    if !cfg_file_path.exists() || cfg_file_path.parent() == super::global_config_path()?.parent() {
         //Don't treat global cfg as local one
         Ok(false)
     } else {

@@ -1,3 +1,4 @@
+use nu_command::config::global_keybinding_config_path;
 use serde::{Deserialize, Serialize};
 
 fn convert_keypress(keypress: KeyPress) -> rustyline::KeyPress {
@@ -408,7 +409,7 @@ type Keybindings = Vec<Keybinding>;
 pub(crate) fn load_keybindings(
     rl: &mut rustyline::Editor<crate::shell::Helper>,
 ) -> Result<(), nu_errors::ShellError> {
-    let filename = nu_data::keybinding::keybinding_path()?;
+    let filename = global_keybinding_config_path()?;
     let contents = std::fs::read_to_string(filename);
 
     // Silently fail if there is no file there

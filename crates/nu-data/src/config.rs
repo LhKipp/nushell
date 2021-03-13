@@ -161,7 +161,7 @@ pub fn value_to_toml_value(v: &Value) -> Result<toml::Value, ShellError> {
 }
 
 #[cfg(feature = "directories")]
-pub fn config_path() -> Result<PathBuf, ShellError> {
+pub fn global_config_dir() -> Result<PathBuf, ShellError> {
     use directories_next::ProjectDirs;
 
     let dir = ProjectDirs::from("org", "nushell", "nu")
@@ -175,25 +175,30 @@ pub fn config_path() -> Result<PathBuf, ShellError> {
 }
 
 #[cfg(not(feature = "directories"))]
-pub fn config_path() -> Result<PathBuf, ShellError> {
+pub fn global_config_dir() -> Result<PathBuf, ShellError> {
     // FIXME: unsure if this should be error or a simple default
 
     Ok(std::path::PathBuf::from("/"))
 }
 
-pub fn default_path() -> Result<PathBuf, ShellError> {
-    default_path_for(&None)
+pub fn global_config_path() -> Result<PathBuf, ShellError> {
+    global_path_for("config.toml")
 }
 
-pub fn default_path_for(file: &Option<PathBuf>) -> Result<PathBuf, ShellError> {
-    let mut filename = config_path()?;
-    let file: &Path = file
-        .as_ref()
-        .map(AsRef::as_ref)
-        .unwrap_or_else(|| "config.toml".as_ref());
-    filename.push(file);
+pub fn global_keybinding_config_path() -> Result<PathBuf, ShellError> {
+    global_path_for("keybindings.yml")
+}
 
-    Ok(filename)
+///Path to the file containing entries of trusted files.
+///Check autoenv trust to learn more
+pub fn global_trusted_file_path() -> Result<PathBuf, ShellError> {
+    global_path_for("nu-env.toml")
+}
+
+fn global_path_for(file_name: &str) -> Result<PathBuf, ShellError> {
+    let mut dir = global_config_dir()?;
+    dir.push(file_name);
+    Ok(dir)
 }
 
 #[cfg(feature = "directories")]
@@ -233,7 +238,7 @@ impl Default for Status {
 }
 
 pub fn last_modified(at: &Option<PathBuf>) -> Result<Status, Box<dyn std::error::Error>> {
-    let filename = default_path()?;
+    let filename = global_config_path()?;
 
     let filename = match at {
         None => filename,
@@ -251,7 +256,7 @@ pub fn read(
     tag: impl Into<Tag>,
     at: &Option<PathBuf>,
 ) -> Result<IndexMap<String, Value>, ShellError> {
-    let filename = default_path()?;
+    let filename = global_config_path()?;
 
     let filename = match at {
         None => filename,
@@ -301,7 +306,7 @@ pub fn config(tag: impl Into<Tag>) -> Result<IndexMap<String, Value>, ShellError
 }
 
 pub fn write(config: &IndexMap<String, Value>, at: &Option<PathBuf>) -> Result<(), ShellError> {
-    let filename = &mut default_path()?;
+    let filename = &mut global_config_path()?;
     let filename = match at {
         None => filename,
         Some(file) => {

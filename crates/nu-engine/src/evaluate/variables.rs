@@ -1,5 +1,6 @@
 use crate::history_path::history_path;
 use indexmap::IndexMap;
+use nu_data::config::global_keybinding_config_path;
 use nu_errors::ShellError;
 use nu_protocol::{TaggedDictBuilder, UntaggedValue, Value};
 use nu_source::Tag;
@@ -40,7 +41,7 @@ pub fn nu(env: &IndexMap<String, String>, tag: impl Into<Tag>) -> Result<Value, 
     let temp = std::env::temp_dir();
     nu_dict.insert_value("temp-dir", UntaggedValue::filepath(temp).into_value(&tag));
 
-    let config = nu_data::config::default_path()?;
+    let config = nu_data::config::global_config_path()?;
     nu_dict.insert_value(
         "config-path",
         UntaggedValue::filepath(config).into_value(&tag),
@@ -48,7 +49,7 @@ pub fn nu(env: &IndexMap<String, String>, tag: impl Into<Tag>) -> Result<Value, 
 
     #[cfg(feature = "rustyline-support")]
     {
-        let keybinding_path = nu_data::keybinding::keybinding_path()?;
+        let keybinding_path = global_keybinding_config_path()?;
         nu_dict.insert_value(
             "keybinding-path",
             UntaggedValue::filepath(keybinding_path).into_value(&tag),

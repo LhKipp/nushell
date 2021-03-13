@@ -28,7 +28,7 @@ pub fn is_file_trusted(nu_env_file: &PathBuf, content: &[u8]) -> Result<bool, Sh
 }
 
 pub fn read_trusted() -> Result<Trusted, ShellError> {
-    let config_path = crate::config::default_path_for(&Some(PathBuf::from("nu-env.toml")))?;
+    let config_path = crate::config::global_path_for("nu-env.toml")?;
 
     let mut file = std::fs::OpenOptions::new()
         .read(true)
